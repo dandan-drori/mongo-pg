@@ -10,6 +10,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "dotenv": "^10.0.0",
     "mongodb": "^4.2.0"
   }
 }

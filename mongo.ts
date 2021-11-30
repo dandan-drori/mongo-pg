@@ -1,32 +1,66 @@
 #!/usr/bin/env ts-node
 
-import {AnyError, MongoClient} from "mongodb";
+// todo aggregation
+
+import {AnyError, MongoClient, MongoClientOptions} from "mongodb";
+require('dotenv').config();
 const client = require('mongodb').MongoClient;
-const url = 'mongodb://127.0.0.1:27017';
 
 function getAll(col: any, query?: any, projection?: any) {
     return col.find(query).project(projection).toArray();
 }
 
-async function playground(col: any) {
-    const res = await getAll(col, {distance: 12000}, {departure: 1, arrival: 1, _id: 0});
-    console.log(res);
-
+function getOne(col: any, query: any, projection?: any) {
+    return col.findOne(query);
 }
 
-(() => {client.connect(url, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-}, async (err: AnyError, client: MongoClient | undefined) => {
+function addMany(col: any, documents: any) {
+    return col.insertMany(documents);
+}
+
+function addOne(col: any, document: any) {
+    return col.insertOne(document);
+}
+
+function deleteMany(col: any, query: any) {
+    return col.deleteMany(query);
+}
+
+function deleteOne(col: any, query: any) {
+    return col.findOneAndDelete(query);
+}
+
+function updateMany(col: any, query: any, update: any ) {
+    return col.updateMany(query, {$set: update});
+}
+
+function updateOne(col: any, query: any, update: any ) {
+    return col.findOneAndUpdate(query, {$set: update});
+}
+
+async function playground(col: any) {
+    const all = await getAll(col, {distance: 12000}, {departure: 1, arrival: 1, _id: 0});
+    console.log(all);
+    const one = await getOne(col, {arrival: "CAD"}, {departure: 1, arrival: 1});
+    console.log(one);
+    // const addManyRes = await addMany(col, [{arrival: "AAA", departure: 'BBB', distance: 0, eta: ""}]);
+    // const addOneRes = await addOne(col, {arrival: "AAA", departure: 'BBB', distance: 0, eta: ""});
+    // const deleteManyRes = await deleteMany(col, {arrival: "AAA"});
+    // const deleteOneRes = await deleteOne(col, {arrival: "AAA"});
+    // const updateManyRes = await updateMany(col, {arrival: "AAA"}, {departure: "CCC"});
+    // const updateOneRes = await updateOne(col, {arrival: "AAA"}, {departure: "CCC"});
+}
+
+(() => {client.connect(process.env.CONNECTION_STRING, {} as MongoClientOptions, async (err: AnyError, client: MongoClient | undefined) => {
     if (err) {
         return console.log(err);
     }
-    const db = client?.db('flights');
+    const db = client?.db(process.env.DB_NAME);
     try {
-        const col = await db?.collection('flight');
+        const col = await db?.collection(process.env.COLLECTION_NAME as string);
         await playground(col);
-        process.exit(1);
     } catch (err) {
-        console.log('Couldn\'t connect to mongo server',err)
+        console.log('Couldn\'t connect to mongo server', err);
     }
+    process.exit(1);
 })})();
