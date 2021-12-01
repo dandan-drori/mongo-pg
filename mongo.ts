@@ -1,64 +1,65 @@
 #!/usr/bin/env ts-node
 
-// todo aggregation
-
-import {AnyError, MongoClient, MongoClientOptions} from "mongodb";
+import {AnyError, Collection, Filter, MongoClient, MongoClientOptions} from "mongodb";
+import {Flight, FlightProjection, FlightQuery} from "./models/flight";
 require('dotenv').config();
 const client = require('mongodb').MongoClient;
 
-function getAll(col: any, query?: any, projection?: any) {
-    return col.find(query, projection).toArray();
+function getAll(col: Collection<Partial<Flight>>, query?: Partial<Flight> | Partial<FlightQuery>, projection?: FlightProjection) {
+    return col.find(query as Filter<Partial<Flight>>, projection).toArray();
 }
 
-function getOne(col: any, query: any, projection?: any) {
-    return col.findOne(query, projection);
+function getOne(col: Collection<Partial<Flight>>, query: Partial<Flight> | Partial<FlightQuery>, projection?: FlightProjection) {
+    return col.findOne(query as Filter<Partial<Flight>>, projection);
 }
 
-function addMany(col: any, documents: any) {
+function addMany(col: Collection<Partial<Flight>>, documents: any) {
     return col.insertMany(documents);
 }
 
-function addOne(col: any, document: any) {
+function addOne(col: Collection<Partial<Flight>>, document: any) {
     return col.insertOne(document);
 }
 
-function deleteMany(col: any, query: any) {
-    return col.deleteMany(query);
+function deleteMany(col: Collection<Partial<Flight>>, query: Partial<Flight> | Partial<FlightQuery>) {
+    return col.deleteMany(query as Filter<Partial<Flight>>);
 }
 
-function deleteOne(col: any, query: any) {
-    return col.findOneAndDelete(query);
+function deleteOne(col: Collection<Partial<Flight>>, query: Partial<Flight> | Partial<FlightQuery>) {
+    return col.findOneAndDelete(query as Filter<Partial<Flight>>);
 }
 
-function updateMany(col: any, query: any, update: any ) {
-    return col.updateMany(query, {$set: update});
+function updateMany(col: Collection<Partial<Flight>>, query: Partial<Flight> | Partial<FlightQuery>, update: Partial<Flight> ) {
+    return col.updateMany(query as Filter<Partial<Flight>>, {$set: update});
 }
 
-function updateOne(col: any, query: any, update: any ) {
-    return col.findOneAndUpdate(query, {$set: update});
+function updateOne(col: Collection<Partial<Flight>>, query: Partial<Flight> | Partial<FlightQuery>, update: Partial<Flight> ) {
+    return col.findOneAndUpdate(query as Filter<Partial<Flight>>, {$set: update});
 }
 
-function removeField(col: any, query: any, fieldName: any) {
-    return col.updateOne(query, {$unset: {[fieldName]: ""}});
+function removeField(col: Collection<Partial<Flight>>, query: Partial<Flight> | Partial<FlightQuery>, fieldName: string) {
+    return col.updateOne(query as Filter<Partial<Flight>>, {$unset: {[fieldName]: ""}});
 }
 
-function addToField(col: any, query: any, fieldName: any, data: any) {
-    return col.updateOne(query, {$push: {[fieldName]: data}});
+function addToField(col: Collection<Partial<Flight>>, query: Partial<Flight> | Partial<FlightQuery>, fieldName: string, data: Partial<Flight>) {
+    return col.updateOne(query as Filter<Partial<Flight>>, {$push: {[fieldName]: data}});
 }
 
-function aggregate(col: any, from: string, localField: string, foreignField: string, as: string) {
+function aggregate(col: Collection<Partial<Flight>>, from: string, localField: string, foreignField: string, as: string) {
     return col.aggregate([{$lookup: { from, localField, foreignField, as }}]).toArray();
 }
 
-async function playground(col: any) {
-    // const all = await getAll(col, {distance: 12000}, {projection: {departure: 1, arrival: 1, _id: 0}});
-    // const one = await getOne(col, {arrival: "CAD"}, {projection: {departure: 1, arrival: 1, _id: 0}});
+async function playground(col: Collection<Partial<Flight>>) {
+    const all = await getAll(col, {distance: 12000}, {projection: {departure: 1, arrival: 1, _id: 0}});
+    const one = await getOne(col, {arrival: "CAD"}, {projection: {departure: 1, arrival: 1, _id: 0}});
     // const addManyRes = await addMany(col, [{arrival: "AAA", departure: 'BBB', distance: 0, eta: ""}]);
     // const addOneRes = await addOne(col, {arrival: "AAA", departure: 'BBB', distance: 0, eta: ""});
     // const deleteManyRes = await deleteMany(col, {arrival: "AAA"});
     // const deleteOneRes = await deleteOne(col, {arrival: "AAA"});
     // const updateManyRes = await updateMany(col, {arrival: "AAA"}, {departure: "CCC"});
     // const updateOneRes = await updateOne(col, {arrival: "AAA"}, {departure: "CCC"});
+    // const removeFieldRes = await removeField(col, {arrival: "AAA"}, 'eta');
+    // const addToFieldRes = await addToField(col, {distance: {$gt: 10000}}, 'someArrayField', {example: "XXX"});
     // const agg = await aggregate(col, 'control', '_id', 'flights', 'controlData');
 }
 
@@ -69,7 +70,7 @@ async function playground(col: any) {
     const db = client?.db(process.env.DB_NAME);
     try {
         const col = await db?.collection(process.env.COLLECTION_NAME as string);
-        await playground(col);
+        await playground(col as Collection<Partial<Flight>>);
     } catch (err) {
         console.log('Couldn\'t connect to mongo server', err);
     }
