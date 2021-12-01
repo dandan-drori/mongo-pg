@@ -7,11 +7,11 @@ require('dotenv').config();
 const client = require('mongodb').MongoClient;
 
 function getAll(col: any, query?: any, projection?: any) {
-    return col.find(query).project(projection).toArray();
+    return col.find(query, projection).toArray();
 }
 
 function getOne(col: any, query: any, projection?: any) {
-    return col.findOne(query);
+    return col.findOne(query, projection);
 }
 
 function addMany(col: any, documents: any) {
@@ -38,17 +38,28 @@ function updateOne(col: any, query: any, update: any ) {
     return col.findOneAndUpdate(query, {$set: update});
 }
 
+function removeField(col: any, query: any, fieldName: any) {
+    return col.updateOne(query, {$unset: {[fieldName]: ""}});
+}
+
+function addToField(col: any, query: any, fieldName: any, data: any) {
+    return col.updateOne(query, {$push: {[fieldName]: data}});
+}
+
+function aggregate(col: any, from: string, localField: string, foreignField: string, as: string) {
+    return col.aggregate([{$lookup: { from, localField, foreignField, as }}]).toArray();
+}
+
 async function playground(col: any) {
-    const all = await getAll(col, {distance: 12000}, {departure: 1, arrival: 1, _id: 0});
-    console.log(all);
-    const one = await getOne(col, {arrival: "CAD"}, {departure: 1, arrival: 1});
-    console.log(one);
+    // const all = await getAll(col, {distance: 12000}, {projection: {departure: 1, arrival: 1, _id: 0}});
+    // const one = await getOne(col, {arrival: "CAD"}, {projection: {departure: 1, arrival: 1, _id: 0}});
     // const addManyRes = await addMany(col, [{arrival: "AAA", departure: 'BBB', distance: 0, eta: ""}]);
     // const addOneRes = await addOne(col, {arrival: "AAA", departure: 'BBB', distance: 0, eta: ""});
     // const deleteManyRes = await deleteMany(col, {arrival: "AAA"});
     // const deleteOneRes = await deleteOne(col, {arrival: "AAA"});
     // const updateManyRes = await updateMany(col, {arrival: "AAA"}, {departure: "CCC"});
     // const updateOneRes = await updateOne(col, {arrival: "AAA"}, {departure: "CCC"});
+    // const agg = await aggregate(col, 'control', '_id', 'flights', 'controlData');
 }
 
 (() => {client.connect(process.env.CONNECTION_STRING, {} as MongoClientOptions, async (err: AnyError, client: MongoClient | undefined) => {
