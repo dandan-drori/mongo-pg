@@ -1,6 +1,6 @@
 #!/usr/bin/env ts-node
 
-import {AnyError, Collection, Filter, MongoClient, MongoClientOptions} from "mongodb";
+import {AnyError, Collection, Filter, MongoClient, MongoClientOptions, ObjectId} from "mongodb";
 import {Flight, FlightProjection, FlightQuery} from "./models/flight";
 require('dotenv').config();
 const client = require('mongodb').MongoClient;
@@ -13,12 +13,12 @@ function getOne(col: Collection<Partial<Flight>>, query: Partial<Flight> | Parti
     return col.findOne(query as Filter<Partial<Flight>>, projection);
 }
 
-function addMany(col: Collection<Partial<Flight>>, documents: any) {
-    return col.insertMany(documents);
+function addMany(col: Collection<Partial<Flight>>, documents: Partial<Flight>[]) {
+    return col.insertMany(documents as Pick<Partial<Flight>, "departure" | "arrival" | "eta" | "distance">[] & { _id?: ObjectId | undefined; });
 }
 
-function addOne(col: Collection<Partial<Flight>>, document: any) {
-    return col.insertOne(document);
+function addOne(col: Collection<Partial<Flight>>, document: Partial<Flight>) {
+    return col.insertOne(document as Pick<Partial<Flight>, "departure" | "arrival" | "eta" | "distance"> & { _id?: ObjectId | undefined; });
 }
 
 function deleteMany(col: Collection<Partial<Flight>>, query: Partial<Flight> | Partial<FlightQuery>) {
